@@ -1,11 +1,15 @@
-import { createStore } from "redux";
+import { combineReducers, createStore } from "redux";
 const intialVal = {
   balance: 0,
   loan: 0,
   loanPurpose: "",
 };
-
-const reducer = (state = intialVal, action) => {
+const intialStateCustomer = {
+  fullName: "",
+  nationalId: "",
+  createdAt: "",
+};
+const accountReducer = (state = intialVal, action) => {
   switch (action.type) {
     case "account/deposit":
       return { ...state, balance: state.balance + action.payload };
@@ -31,15 +35,28 @@ const reducer = (state = intialVal, action) => {
   }
 };
 
-const store = createStore(reducer);
-// store.dispatch({ type: "account/deposit", payload: 50 });
-// console.log(store.getState());
-// store.dispatch({ type: "account/withdraw", payload: 10 });
-// store.dispatch({
-//   type: "account/requestLoan",
-//   payload: { ammount: 1000, purpose: "To Buy A Car" },
-// });
+const customerReducer = (state = intialStateCustomer, action) => {
+  switch (action.type) {
+    case "customer/createCustomer":
+      return {
+        ...state,
+        fullName: action.payload.fullName,
+        nationalId: action.payload.nationalId,
+        createdAt: action.payload.createdAt,
+      };
+    case "customer/updateName":
+      return { ...state, fullName: action.payload };
+    default:
+      return state;
+  }
+};
 
+const rootReducer = combineReducers({
+  account: accountReducer,
+  customer: customerReducer,
+});
+
+const Store = createStore(rootReducer);
 const deposit = (amount) => {
   return { type: "account/deposit", payload: amount };
 };
@@ -59,9 +76,29 @@ const payloan = () => {
   return { type: "account/payLoan" };
 };
 
-store.dispatch(deposit(1000));
-store.dispatch(withdraw(100));
-console.log(store.getState());
+Store.dispatch(deposit(1000));
+Store.dispatch(withdraw(100));
+console.log(Store.getState());
 
-store.dispatch(requestLoan(5000, "To Buy A home"));
-console.log(store.getState());
+Store.dispatch(requestLoan(5000, "To Buy A home"));
+console.log(Store.getState());
+
+const createCustomer = (fullName, nationalId) => {
+  return {
+    type: "customer/createCustomer",
+    payload: {
+      fullName,
+      nationalId,
+      createdAt: new Date().toISOString(),
+    },
+  };
+};
+
+const updateName = (fullName) => {
+  return { type: "customer/updateName", payload: fullName };
+};
+
+Store.dispatch(createCustomer("Nathnael Zelalem", "0923479921"));
+console.log(Store.getState());
+Store.dispatch(updateName("Natanim Zelalem"));
+console.log(Store.getState());
