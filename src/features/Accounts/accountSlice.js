@@ -13,6 +13,7 @@ const accountSlice = createSlice({
   reducers: {
     deposit(state, action) {
       state.balance += action.payload;
+      state.isLoading = false;
     },
     withdraw(state, action) {
       state.balance -= action.payload;
@@ -33,16 +34,37 @@ const accountSlice = createSlice({
         state.balance += action.payload.amount;
       },
     },
-    payLoan(state, action) {
+    payLoan(state) {
       state.balance -= state.loan;
       state.loan = 0;
       state.loanPurpose = "";
     },
+    convertingCurrency(state) {
+      state.isLoading = true;
+    },
   },
 });
 
-export const { deposit, withdraw, requestLoan, payLoan } = accountSlice.actions;
+export const { withdraw, requestLoan, payLoan, convertingCurrency } =
+  accountSlice.actions;
 
+export function deposit(amount, currency) {
+  if (currency === "USD") {
+    return { type: "account/deposit", payload: amount };
+  }
+
+  return async (dispatch, getState) => {
+    dispatch({ type: "account/convertingCurrency" });
+    const host = "api.frankfurter.app";
+    const res = await fetch(
+      `https://${host}/latest?amount=${amount}&from=${currency}&to=USD`
+    );
+    const data = await res.json();
+    const converted = data.rates.USD;
+
+    dispatch({ type: "account/deposit", payload: converted });
+  };
+}
 export default accountSlice.reducer;
 /* export default function accountReducer(state = intialVal, action) {
   switch (action.type) {
@@ -79,23 +101,7 @@ export default accountSlice.reducer;
   }
 }
 
-export function deposit(amount, currency) {
-  if (currency === "USD") {
-    return { type: "account/deposit", payload: amount };
-  }
 
-  return async (dispatch, getState) => {
-    dispatch({ type: "account/convertingCurrency" });
-    const host = "api.frankfurter.app";
-    const res = await fetch(
-      `https://${host}/latest?amount=${amount}&from=${currency}&to=USD`
-    );
-    const data = await res.json();
-    const converted = data.rates.USD;
-
-    dispatch({ type: "account/deposit", payload: converted });
-  };
-}
 
 export function withdraw(amount) {
   return { type: "account/withdraw", payload: amount };
